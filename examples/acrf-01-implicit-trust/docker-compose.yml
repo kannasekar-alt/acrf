@@ -1,0 +1,73 @@
+services:
+
+  vulnerable-booking:
+    build: ./vulnerable
+    container_name: booking-executor
+    command: python -u booking.py
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  vulnerable-orchestrator:
+    build: ./vulnerable
+    container_name: travel-orchestrator
+    command: python -u orchestrator.py
+    depends_on:
+      - vulnerable-booking
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  vulnerable-attacker:
+    build: ./vulnerable
+    container_name: attacker
+    command: python -u attacker.py
+    depends_on:
+      - vulnerable-booking
+      - vulnerable-orchestrator
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  protected-booking:
+    build: ./protected
+    container_name: booking-executor
+    command: python -u booking.py
+    profiles: ["protected"]
+    volumes:
+      - agent-keys:/app/keys
+      - agent-cards:/app/agent-cards
+    networks:
+      - acrf-demo
+
+  protected-orchestrator:
+    build: ./protected
+    container_name: travel-orchestrator
+    command: python -u orchestrator.py
+    depends_on:
+      - protected-booking
+    profiles: ["protected"]
+    volumes:
+      - agent-keys:/app/keys
+      - agent-cards:/app/agent-cards
+    networks:
+      - acrf-demo
+
+  protected-attacker:
+    build: ./protected
+    container_name: attacker
+    command: python -u attacker.py
+    depends_on:
+      - protected-booking
+      - protected-orchestrator
+    profiles: ["protected"]
+    networks:
+      - acrf-demo
+
+networks:
+  acrf-demo:
+    driver: bridge
+
+volumes:
+  agent-keys:
+  agent-cards:
