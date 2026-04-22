@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest an improvement to the ACRF reference tool (new command, new output format, better error messages, etc.).
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. For changes to the methodology itself, please use the "Methodology change proposal" template.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the user-facing problem. "I was doing X and got stuck because Y."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe what you would like the tool to do.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acrf.dev/schemas/system-description-v0.1.json",
+  "title": "ACRF System Description",
+  "description": "A machine-readable description of a multi-agent system for the purpose of ACRF assessment against the 10 risk dimensions.",
+  "type": "object",
+  "required": ["acrf_version", "system", "agents", "channels"],
+  "properties": {
+    "acrf_version": {
+      "type": "string",
+      "description": "The ACRF methodology version this description targets.",
+      "examples": ["0.1"]
+    },
+    "system": {
+      "type": "object",
+      "required": ["name", "description"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "owner": { "type": "string" },
+        "assessment_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of the assessment."
+        }
+      }
+    },
+    "agents": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/agent" }
+    },
+    "channels": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/channel" }
+    },
+    "trust_boundaries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/trust_boundary" }
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Evidence references per ACRF risk dimension and control objective.",
+      "properties": {
+        "implicit_trust": { "$ref": "#/$defs/dimension_evidence" },
+        "no_standard_identity": { "$ref": "#/$defs/dimension_evidence" },
+        "mcp_server_sprawl": { "$ref": "#/$defs/dimension_evidence" },
+        "memory_poisoning": { "$ref": "#/$defs/dimension_evidence" },
+        "supply_chain_toxicity": { "$ref": "#/$defs/dimension_evidence" },
+        "config_execution_vectors": { "$ref": "#/$defs/dimension_evidence" },
+        "multi_turn_defense_collapse": { "$ref": "#/$defs/dimension_evidence" },
+        "cascading_failure_blindness": { "$ref": "#/$defs/dimension_evidence" },
+        "semantic_bypass": { "$ref": "#/$defs/dimension_evidence" },
+        "safety_controls_not_self_protecting": { "$ref": "#/$defs/dimension_evidence" }
+      }
+    }
+  },
+  "$defs": {
+    "agent": {
+      "type": "object",
+      "required": ["id", "name", "role"],
+      "properties": {
+        "id": { "type": "string", "description": "Stable identifier for this agent within the description." },
+        "name": { "type": "string" },
+        "role": {
+          "type": "string",
+          "enum": ["orchestrator", "tool_user", "service_agent", "third_party"],
+          "description": "The role the agent plays in the system."
+        },
+        "identity_scheme": {
+          "type": "string",
+          "description": "How this agent's identity is established (e.g., 'mtls-spiffe', 'oauth-client-credentials')."
+        },
+        "operates_on_behalf_of": {
+          "type": "string",
+          "enum": ["user", "service", "unattended"],
+          "description": "Whose authority this agent acts under."
+        }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "required": ["id", "sender", "receiver", "transport"],
+      "properties": {
+        "id": { "type": "string" },
+        "sender": { "type": "string", "description": "Agent id of the sender." },
+        "receiver": { "type": "string", "description": "Agent id of the receiver." },
+        "transport": {
+          "type": "string",
+          "description": "Transport mechanism (e.g., 'https', 'grpc', 'kafka', 'in-process')."
+        },
+        "message_format": {
+          "type": "string",
+          "description": "Message format (e.g., 'json-rpc', 'protobuf', 'natural-language')."
+        },
+        "crosses_trust_boundary": {
+          "type": "boolean",
+          "description": "Whether this channel crosses a trust boundary."
+        },
+        "synchronous": { "type": "boolean" },
+        "actions": {
+          "type": "array",
+          "description": "The set of actions invocable over this channel.",
+          "items": {
+            "type": "object",
+            "required": ["name", "blast_radius"],
+            "properties": {
+              "name": { "type": "string" },
+              "blast_radius": {
+                "type": "string",
+                "enum": ["low", "medium", "high", "critical"],
+                "description": "Qualitative measure of the potential impact of misuse of this action."
+              },
+              "reversible": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "trust_boundary": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "dimension_evidence": {
+      "type": "object",
+      "properties": {
+        "claimed_level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["control_objective", "artifact"],
+            "properties": {
+              "control_objective": {
+                "type": "string",
+                "description": "The control objective identifier this evidence supports (e.g., 'IT-1', 'SI-2', 'MT-3')."
+              },
+              "artifact": {
+                "type": "string",
+                "description": "Reference to the evidence artifact (URL, path, runbook link, etc.)."
+              },
+              "description": {
+                "type": "string",
+                "description": "Brief description of what the artifact demonstrates."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

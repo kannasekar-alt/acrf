@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General question or discussion
+    url: https://github.com/kannasekar-alt/acrf/discussions
+    about: For questions about how to apply ACRF to a specific system, open a discussion instead of an issue.

@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "acrf"
+version = "0.1.0"
+description = "ACRF - a structured risk methodology and reference tool for securing agent-to-agent (A2A) communications."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Kanna Sekar" },
+]
+keywords = [
+    "ai-security",
+    "agent-security",
+    "multi-agent-systems",
+    "agent-to-agent",
+    "a2a",
+    "llm-security",
+    "ai-risk",
+    "threat-modeling",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+validate = [
+    "jsonschema>=4.0",
+]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+    "mypy>=1.8",
+    "types-PyYAML>=6.0",
+    "jsonschema>=4.0",
+]
+
+[project.scripts]
+acrf = "acrf.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/kannasekar-alt/acrf"
+Documentation = "https://github.com/kannasekar-alt/acrf/tree/main/docs"
+Repository = "https://github.com/kannasekar-alt/acrf"
+Issues = "https://github.com/kannasekar-alt/acrf/issues"
+Changelog = "https://github.com/kannasekar-alt/acrf/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["acrf*"]
+
+[tool.setuptools.package-data]
+acrf = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+ignore_missing_imports = true

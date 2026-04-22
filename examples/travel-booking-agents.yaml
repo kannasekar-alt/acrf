@@ -1,0 +1,207 @@
+acrf_version: "0.1"
+
+system:
+  name: "Travel Booking Multi-Agent System"
+  description: >-
+    A system where a user-facing travel concierge agent coordinates with
+    specialized booking agents (flights, hotels, car rental) and an
+    external third-party deal-finder agent to complete a trip booking.
+  owner: "example-org/travel-platform"
+  assessment_date: "2026-04-20"
+
+agents:
+  - id: concierge
+    name: "Travel Concierge"
+    role: orchestrator
+    identity_scheme: mtls-spiffe
+    operates_on_behalf_of: user
+
+  - id: flight-agent
+    name: "Flight Booking Agent"
+    role: service_agent
+    identity_scheme: mtls-spiffe
+    operates_on_behalf_of: service
+
+  - id: hotel-agent
+    name: "Hotel Booking Agent"
+    role: service_agent
+    identity_scheme: mtls-spiffe
+    operates_on_behalf_of: service
+
+  - id: car-agent
+    name: "Car Rental Agent"
+    role: service_agent
+    identity_scheme: mtls-spiffe
+    operates_on_behalf_of: service
+
+  - id: deal-finder
+    name: "Third-Party Deal Finder"
+    role: third_party
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+trust_boundaries:
+  - id: tb-internal-external
+    name: "Internal / Third-Party"
+    description: "The boundary between our own agents and the deal-finder."
+
+channels:
+  - id: ch-concierge-flight
+    sender: concierge
+    receiver: flight-agent
+    transport: grpc
+    message_format: protobuf
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: search_flights
+        blast_radius: low
+        reversible: true
+      - name: book_flight
+        blast_radius: high
+        reversible: false
+      - name: cancel_flight
+        blast_radius: medium
+        reversible: true
+
+  - id: ch-concierge-hotel
+    sender: concierge
+    receiver: hotel-agent
+    transport: grpc
+    message_format: protobuf
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: search_hotels
+        blast_radius: low
+        reversible: true
+      - name: book_hotel
+        blast_radius: high
+        reversible: false
+      - name: cancel_hotel
+        blast_radius: medium
+        reversible: true
+
+  - id: ch-concierge-car
+    sender: concierge
+    receiver: car-agent
+    transport: grpc
+    message_format: protobuf
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: search_cars
+        blast_radius: low
+        reversible: true
+      - name: book_car
+        blast_radius: high
+        reversible: false
+
+  - id: ch-concierge-deals
+    sender: concierge
+    receiver: deal-finder
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: query_deals
+        blast_radius: low
+        reversible: true
+
+# Evidence mapped to the 10 ACRF risk dimensions.
+# Control objective codes: IT (Implicit Trust), SI (Standard Identity),
+# SS (Server Sprawl), MP (Memory Poisoning), SC (Supply Chain),
+# CE (Config Execution), MT (Multi-Turn), CF (Cascading Failure),
+# SB (Semantic Bypass), SP (Safety/Self-Protecting).
+evidence:
+  implicit_trust:
+    claimed_level: 3
+    artifacts:
+      - control_objective: IT-1
+        artifact: "configs/envoy-mtls.yaml"
+        description: "Envoy sidecar configuration enforcing mTLS verification on receipt  - agents verify sender identity, not just network position."
+      - control_objective: IT-2
+        artifact: "policies/trust-delegation.md"
+        description: "Explicit trust delegation policy; concierge warrant scoped to booking actions only."
+      - control_objective: IT-3
+        artifact: "runbooks/credential-rotation-2026-q1.md"
+        description: "Quarterly mTLS credential rotation with automated warrant reissuance."
+
+  no_standard_identity:
+    claimed_level: 3
+    artifacts:
+      - control_objective: SI-1
+        artifact: "runbooks/spiffe-provisioning.md"
+        description: "SPIFFE-based identity provisioning; distinct agent SVIDs per workload."
+      - control_objective: SI-2
+        artifact: "configs/oauth-scoped-tokens.yaml"
+        description: "OAuth 2.1 scoped tokens for third-party deal-finder; tokens bound to agent identity."
+      - control_objective: SI-3
+        artifact: "runbooks/credential-rotation-2026-q1.md"
+        description: "Identity material rotated quarterly; last rotation 2026-02-15."
+
+  mcp_server_sprawl:
+    claimed_level: 1
+    artifacts:
+      - control_objective: SS-1
+        artifact: "inventory/agent-tool-registry.yaml"
+        description: "Centralized registry of all MCP servers and tool endpoints used by agents."
+
+  memory_poisoning:
+    claimed_level: 1
+    artifacts:
+      - control_objective: MP-1
+        artifact: "configs/context-isolation.yaml"
+        description: "Per-agent context namespaces; concierge cannot read flight-agent internal memory."
+
+  supply_chain_toxicity:
+    claimed_level: 2
+    artifacts:
+      - control_objective: SC-1
+        artifact: "configs/dependency-lockfiles/"
+        description: "All agent dependencies pinned with lockfiles; no floating versions."
+      - control_objective: SC-2
+        artifact: "ci/skill-scanner-config.yaml"
+        description: "Automated skill-scanner in CI pipeline; blocks deploys with known-vulnerable tools."
+
+  config_execution_vectors:
+    claimed_level: 2
+    artifacts:
+      - control_objective: CE-1
+        artifact: "configs/sandbox-policy.yaml"
+        description: "Agent config files are read-only at runtime; changes require deploy pipeline."
+      - control_objective: CE-2
+        artifact: "tests/test_config_no_exec.py"
+        description: "Test suite verifying no executable content in agent configuration files."
+
+  multi_turn_defense_collapse:
+    claimed_level: 1
+    artifacts:
+      - control_objective: MT-1
+        artifact: "configs/session-limits.yaml"
+        description: "Session turn limits configured per agent; concierge capped at 50 turns per session."
+
+  cascading_failure_blindness:
+    claimed_level: 2
+    artifacts:
+      - control_objective: CF-1
+        artifact: "configs/circuit-breakers.yaml"
+        description: "Circuit breakers on all inter-agent channels; trip after 5 consecutive failures."
+      - control_objective: CF-2
+        artifact: "observability/trace-example.json"
+        description: "OpenTelemetry distributed tracing; full cascade reconstruction from any hop."
+
+  semantic_bypass:
+    claimed_level: 1
+    artifacts:
+      - control_objective: SB-1
+        artifact: "policies/intent-validation.md"
+        description: "Intent validation rules for deal-finder responses; blocks action-like content in data fields."
+
+  safety_controls_not_self_protecting:
+    claimed_level: 1
+    artifacts:
+      - control_objective: SP-1
+        artifact: "configs/guardrails.yaml"
+        description: "Guardrail configs are immutable at runtime; deployed via separate pipeline with approval gate."

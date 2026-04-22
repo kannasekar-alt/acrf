@@ -1,0 +1,50 @@
+acrf_version: "0.1"
+
+system:
+  name: "Minimal Two-Agent System"
+  description: >-
+    The smallest non-trivial ACRF example: one orchestrator agent calls one
+    service agent over a single channel. Useful as a starting template.
+  owner: "example-org/demo"
+  assessment_date: "2026-04-20"
+
+agents:
+  - id: orchestrator
+    name: "Orchestrator"
+    role: orchestrator
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: user
+
+  - id: worker
+    name: "Worker"
+    role: service_agent
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+channels:
+  - id: ch-orch-worker
+    sender: orchestrator
+    receiver: worker
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: do_task
+        blast_radius: low
+        reversible: true
+
+evidence:
+  implicit_trust:
+    claimed_level: 1
+    artifacts:
+      - control_objective: IT-1
+        artifact: "configs/oauth-clients.yaml"
+        description: "Each agent verifies the other's OAuth token before acting on messages."
+
+  cascading_failure_blindness:
+    claimed_level: 1
+    artifacts:
+      - control_objective: CF-1
+        artifact: "observability/access.log"
+        description: "Every A2A call logged with timestamp, sender, receiver, action; basic circuit breaker in place."

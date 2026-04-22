@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+title: "ACRF: Agent Communication Risk Framework"
+message: "If you use ACRF in your work, please cite it as below."
+type: software
+authors:
+  - family-names: Sekar
+    given-names: Kanna
+    orcid: "https://orcid.org/0009-0003-7470-1432"
+  - family-names: Sankara Narayanan
+    given-names: Ravi Karthick
+repository-code: "https://github.com/kannasekar-alt/acrf"
+url: "https://github.com/kannasekar-alt/acrf"
+abstract: >-
+  ACRF is a cross-framework risk methodology for securing agent-to-agent
+  (A2A) communications. It defines 10 critical risk dimensions  - each
+  cross-mapped to the OWASP Agentic Top 10 and OWASP MCP Top 10  - with
+  AIVSS severity scoring and concrete defense patterns. First presented
+  at RSA Conference 2026.
+keywords:
+  - ai-security
+  - agent-security
+  - multi-agent-systems
+  - agent-to-agent
+  - a2a
+  - llm-security
+  - ai-risk
+  - threat-modeling
+  - owasp
+  - mcp-security
+license: Apache-2.0
+version: 0.1.0
+date-released: "2026-04-20"

@@ -1,0 +1,153 @@
+acrf_version: "0.1"
+
+system:
+  name: "Clinical Prior-Authorization Agent System"
+  description: >-
+    A provider-side clinical agent assembles prior-authorization requests,
+    coordinates with an internal EHR-lookup agent, and submits to a payer's
+    third-party authorization agent across an organizational trust boundary.
+    This example exercises cross-boundary communication and a mix of
+    reversible and irreversible actions.
+  owner: "example-health/prior-auth-platform"
+  assessment_date: "2026-04-20"
+
+agents:
+  - id: clinician-agent
+    name: "Clinician-Facing Agent"
+    role: orchestrator
+    identity_scheme: oauth-user-delegated
+    operates_on_behalf_of: user
+
+  - id: ehr-agent
+    name: "EHR Lookup Agent"
+    role: service_agent
+    identity_scheme: mtls-spiffe
+    operates_on_behalf_of: service
+
+  - id: policy-agent
+    name: "Coverage Policy Agent"
+    role: service_agent
+    identity_scheme: mtls-spiffe
+    operates_on_behalf_of: service
+
+  - id: payer-auth-agent
+    name: "Payer Prior-Authorization Agent"
+    role: third_party
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+trust_boundaries:
+  - id: tb-provider-payer
+    name: "Provider / Payer"
+    description: "The boundary between the provider's internal agents and the payer."
+
+channels:
+  - id: ch-clinician-ehr
+    sender: clinician-agent
+    receiver: ehr-agent
+    transport: grpc
+    message_format: protobuf
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: fetch_patient_record
+        blast_radius: medium
+        reversible: true
+      - name: fetch_clinical_note
+        blast_radius: medium
+        reversible: true
+
+  - id: ch-clinician-policy
+    sender: clinician-agent
+    receiver: policy-agent
+    transport: grpc
+    message_format: protobuf
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: lookup_coverage_policy
+        blast_radius: low
+        reversible: true
+
+  - id: ch-clinician-payer
+    sender: clinician-agent
+    receiver: payer-auth-agent
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: submit_prior_auth_request
+        blast_radius: critical
+        reversible: false
+      - name: check_prior_auth_status
+        blast_radius: low
+        reversible: true
+
+evidence:
+  implicit_trust:
+    claimed_level: 2
+    artifacts:
+      - control_objective: IT-1
+        artifact: "configs/mesh-mtls-policy.yaml"
+        description: "Mesh-level mTLS verification; agents verify identity on every inbound call."
+      - control_objective: IT-2
+        artifact: "policies/payer-trust-delegation.md"
+        description: "Explicit trust delegation to payer agent; scoped to prior-auth submission only."
+
+  no_standard_identity:
+    claimed_level: 2
+    artifacts:
+      - control_objective: SI-1
+        artifact: "runbooks/spiffe-workload-identity.md"
+        description: "Internal agents have SPIFFE SVIDs; payer uses OAuth client credentials."
+      - control_objective: SI-2
+        artifact: "iam/scoped-tokens.yaml"
+        description: "Payer agent token scoped to prior-auth endpoints; cannot access EHR data."
+
+  mcp_server_sprawl:
+    claimed_level: 0
+    artifacts: []
+
+  memory_poisoning:
+    claimed_level: 1
+    artifacts:
+      - control_objective: MP-1
+        artifact: "configs/context-isolation-ehr.yaml"
+        description: "Patient data context isolated per session; payer agent cannot access raw EHR memory."
+
+  supply_chain_toxicity:
+    claimed_level: 1
+    artifacts:
+      - control_objective: SC-1
+        artifact: "ci/dependency-audit.md"
+        description: "Monthly dependency audit; all agent packages pinned in lockfiles."
+
+  config_execution_vectors:
+    claimed_level: 1
+    artifacts:
+      - control_objective: CE-1
+        artifact: "configs/readonly-agent-configs.md"
+        description: "Agent configs deployed read-only; runtime modification blocked by filesystem policy."
+
+  multi_turn_defense_collapse:
+    claimed_level: 0
+    artifacts: []
+
+  cascading_failure_blindness:
+    claimed_level: 1
+    artifacts:
+      - control_objective: CF-1
+        artifact: "logging/audit-pipeline.md"
+        description: "All A2A invocations logged with caller, callee, action, patient-id; basic circuit breakers."
+
+  semantic_bypass:
+    claimed_level: 1
+    artifacts:
+      - control_objective: SB-1
+        artifact: "policies/payer-response-validation.md"
+        description: "Payer agent responses validated against schema; blocks unstructured action-like content."
+
+  safety_controls_not_self_protecting:
+    claimed_level: 0
+    artifacts: []

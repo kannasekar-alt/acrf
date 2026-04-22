@@ -1,0 +1,53 @@
+name: Methodology change proposal
+description: Propose an addition, clarification, or refinement to the ACRF methodology itself (the ten risk dimensions, control objectives, OWASP cross-mappings, AIVSS scores, or maturity scales).
+title: "[methodology] "
+labels: ["methodology-change"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a methodology change. Please fill out the sections below so the comment period can be focused.
+        See [docs/governance.md](../blob/main/docs/governance.md) for the full change process.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of change
+      options:
+        - Clarification (wording, example, evidence suggestion)
+        - Non-breaking addition (new optional control objective, new note)
+        - Breaking change (altered dimension, AIVSS score, scale, or scoring rule)
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What problem does this solve? A real-world scenario or a specific ambiguity you encountered is ideal.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-change
+    attributes:
+      label: Proposed change
+      description: The text change you are proposing, ideally as a before/after or as a diff against the current methodology.
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact on existing assessments
+      description: Would an organization that assessed their system under the current version need to rescore after this change?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other ways did you consider solving this?
+    validations:
+      required: false

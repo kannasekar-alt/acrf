@@ -1,0 +1,184 @@
+acrf_version: "0.1"
+
+system:
+  name: "Automated Trading Research Assistant"
+  description: >-
+    A research-oriented multi-agent system where a user-facing analyst agent
+    coordinates with a market-data agent, a portfolio-modelling agent, and an
+    external third-party news-summary agent. A separate execution agent can
+    place actual trades when the analyst agent recommends and the user
+    approves. Cross-boundary channels exist to both the third-party news
+    service and to the brokerage execution venue.
+  owner: "example-org/research-platform"
+  assessment_date: "2026-04-18"
+
+agents:
+  - id: analyst
+    name: "Research Analyst Agent"
+    role: orchestrator
+    identity_scheme: oauth2-jwt
+    operates_on_behalf_of: user
+
+  - id: market-data
+    name: "Market Data Agent"
+    role: service_agent
+    identity_scheme: oauth2-jwt
+    operates_on_behalf_of: service
+
+  - id: portfolio-model
+    name: "Portfolio Modelling Agent"
+    role: service_agent
+    identity_scheme: oauth2-jwt
+    operates_on_behalf_of: service
+
+  - id: news-summary
+    name: "Third-Party News Summary Agent"
+    role: third_party
+    identity_scheme: api-key
+    operates_on_behalf_of: service
+
+  - id: execution
+    name: "Trade Execution Agent"
+    role: service_agent
+    identity_scheme: oauth2-jwt
+    operates_on_behalf_of: user
+
+trust_boundaries:
+  - id: tb-third-party
+    name: "Internal / Third-Party News"
+    description: "Boundary between internal agents and the third-party news summarizer."
+  - id: tb-brokerage
+    name: "Internal / Brokerage Venue"
+    description: "Boundary between internal agents and the external brokerage API."
+
+channels:
+  - id: ch-analyst-marketdata
+    sender: analyst
+    receiver: market-data
+    transport: grpc
+    message_format: protobuf
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: get_quote
+        blast_radius: low
+        reversible: true
+      - name: get_history
+        blast_radius: low
+        reversible: true
+
+  - id: ch-analyst-portfolio
+    sender: analyst
+    receiver: portfolio-model
+    transport: grpc
+    message_format: protobuf
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: simulate_allocation
+        blast_radius: low
+        reversible: true
+      - name: get_risk_profile
+        blast_radius: low
+        reversible: true
+
+  - id: ch-analyst-news
+    sender: analyst
+    receiver: news-summary
+    transport: https
+    message_format: json
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: summarize_topic
+        blast_radius: low
+        reversible: true
+
+  - id: ch-analyst-execution
+    sender: analyst
+    receiver: execution
+    transport: grpc
+    message_format: protobuf
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: submit_order
+        blast_radius: critical
+        reversible: false
+      - name: cancel_order
+        blast_radius: medium
+        reversible: true
+
+evidence:
+  implicit_trust:
+    claimed_level: 2
+    artifacts:
+      - control_objective: IT-1
+        artifact: "gateway/jwt-verification.yaml"
+        description: "API gateway verifies JWT signatures on every inbound call; agents do not trust by network position."
+      - control_objective: IT-2
+        artifact: "policies/trust-delegation-trading.md"
+        description: "Explicit trust delegation: analyst can request but not execute trades without user approval gate."
+
+  no_standard_identity:
+    claimed_level: 2
+    artifacts:
+      - control_objective: SI-1
+        artifact: "iam/agent-identity-registry.md"
+        description: "Every agent has a service account with a dedicated OAuth2 client ID."
+      - control_objective: SI-2
+        artifact: "iam/scoped-token-policy.yaml"
+        description: "Tokens scoped per agent; news-summary agent token cannot invoke execution endpoints."
+
+  mcp_server_sprawl:
+    claimed_level: 0
+    artifacts: []
+
+  memory_poisoning:
+    claimed_level: 0
+    artifacts: []
+
+  supply_chain_toxicity:
+    claimed_level: 1
+    artifacts:
+      - control_objective: SC-1
+        artifact: "ci/lockfile-check.yaml"
+        description: "CI enforces pinned dependencies; floating versions blocked at merge."
+
+  config_execution_vectors:
+    claimed_level: 0
+    artifacts: []
+
+  multi_turn_defense_collapse:
+    claimed_level: 1
+    artifacts:
+      - control_objective: MT-1
+        artifact: "configs/session-policy.yaml"
+        description: "Analyst agent sessions capped at 100 turns; execution requires fresh user confirmation."
+
+  cascading_failure_blindness:
+    claimed_level: 3
+    artifacts:
+      - control_objective: CF-1
+        artifact: "configs/circuit-breakers.yaml"
+        description: "Circuit breakers on all channels; execution channel has 1-failure trip threshold."
+      - control_objective: CF-2
+        artifact: "observability/trace-examples/"
+        description: "OpenTelemetry distributed tracing; sample trace for submit_order flow provided."
+      - control_objective: CF-3
+        artifact: "observability/log-integrity.md"
+        description: "Logs streamed to append-only store; integrity validated nightly."
+
+  semantic_bypass:
+    claimed_level: 1
+    artifacts:
+      - control_objective: SB-1
+        artifact: "policies/news-content-filter.yaml"
+        description: "News-summary responses filtered for action-like directives before passing to analyst."
+
+  safety_controls_not_self_protecting:
+    claimed_level: 1
+    artifacts:
+      - control_objective: SP-1
+        artifact: "configs/immutable-guardrails.yaml"
+        description: "Trade execution guardrails deployed immutably; cannot be modified at runtime by any agent."
