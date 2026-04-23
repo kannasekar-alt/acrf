@@ -39,6 +39,7 @@ It is designed to be:
 | 09 | **Semantic Bypass** | ASI09 Human-Agent Trust | MCP10 Context Over-Sharing | High (8.6) | Guardian agents, intent validation |
 | 10 | **Safety Controls Not Self-Protecting** | ASI10 Rogue Agents | MCP02 Privilege Escalation | Critical (9.5) | Least agency, immutable guardrails |
 
+AIVSS scores reflect worst-case deployment, autonomous agents with full tool access and no guardrails in place. Your actual severity will vary based on your architecture and controls.
 See [`docs/methodology.md`](docs/methodology.md) for the full rubric, evidence requirements, and maturity scales.
 
 ## Quickstart
