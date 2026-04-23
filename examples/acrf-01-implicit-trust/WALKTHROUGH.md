@@ -6,7 +6,8 @@ Purpose: Show ACRF-01 as a working concept, not just a framework entry
 
 ## Opening (30 seconds)
 
-"This is ACRF-01 — Implicit Trust Between Agents. The highest-severity risk in our framework, scored Critical at 9.2 on AIVSS.
+
+This is ACRF-01 — Implicit Trust Between Agents. The highest-severity risk in our framework, scored Critical at 9.2 on AIVSS.
 
 Most multi-agent systems today have this vulnerability by default. When Agent A sends a message to Agent B, Agent B trusts the sender field in the JSON. No signature. No cryptographic proof. Just words in a message.
 
