@@ -1,0 +1,138 @@
+# ============================================================================
+# ACRF Assessment Template: Implicit Trust Between Agents (ACRF-01)
+# ============================================================================
+# Severity: Critical (AIVSS 9.4)
+# OWASP Refs: Agentic Top 10 — A01 (Agent Authorization & Control)
+#             MCP Top 10 — M01 (Tool Poisoning)
+# ============================================================================
+# This template defines a realistic multi-agent scenario where implicit trust
+# is the primary risk. Use it as a starting point: describe your own agents,
+# channels, and evidence, then run `acrf assess` to score your system.
+# ============================================================================
+
+acrf_version: "0.1"
+
+system:
+  name: "Customer Support Agent Pipeline"
+  description: >-
+    A customer-facing chatbot orchestrator delegates tasks to a retrieval
+    agent and an action agent. The action agent can issue refunds and modify
+    accounts. Without explicit trust verification, any agent in the pipeline
+    can invoke high-blast-radius actions by simply claiming to be the
+    orchestrator.
+  owner: "acrf/assessment-templates"
+  assessment_date: "2026-04-24"
+
+agents:
+  - id: chatbot
+    name: "Customer Chatbot"
+    role: orchestrator
+    identity_scheme: none
+    operates_on_behalf_of: user
+
+  - id: retrieval
+    name: "Knowledge Retrieval Agent"
+    role: service_agent
+    identity_scheme: none
+    operates_on_behalf_of: service
+
+  - id: action
+    name: "Account Action Agent"
+    role: service_agent
+    identity_scheme: none
+    operates_on_behalf_of: service
+
+  - id: third-party-plugin
+    name: "Third-Party Review Plugin"
+    role: third_party
+    identity_scheme: none
+    operates_on_behalf_of: unattended
+
+trust_boundaries:
+  - id: tb-internal
+    name: "Internal Service Boundary"
+    description: "Boundary between orchestrator and internal service agents."
+  - id: tb-external
+    name: "Third-Party Boundary"
+    description: "Boundary between internal agents and third-party plugins."
+
+channels:
+  - id: ch-chatbot-retrieval
+    sender: chatbot
+    receiver: retrieval
+    transport: in-process
+    message_format: json-rpc
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: search_knowledge_base
+        blast_radius: low
+        reversible: true
+
+  - id: ch-chatbot-action
+    sender: chatbot
+    receiver: action
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: issue_refund
+        blast_radius: high
+        reversible: false
+      - name: modify_account
+        blast_radius: high
+        reversible: false
+      - name: lookup_order
+        blast_radius: low
+        reversible: true
+
+  - id: ch-retrieval-plugin
+    sender: retrieval
+    receiver: third-party-plugin
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: fetch_reviews
+        blast_radius: medium
+        reversible: true
+
+# ============================================================================
+# Evidence: What controls exist today?
+#
+# Maturity Levels:
+#   0 — None: No trust verification; agents accept all messages at face value.
+#   1 — Initial: Basic token or API-key validation between agents.
+#   2 — Defined: Per-channel authorization policies; least-privilege scoping.
+#   3 — Managed: Runtime trust re-evaluation; anomaly detection on agent calls.
+#   4 — Optimized: Continuous verification with hardware-rooted identity;
+#        automated policy enforcement and drift detection.
+#
+# Control Objectives:
+#   IT-1  Verify caller identity before processing any request.
+#   IT-2  Enforce per-action authorization (not just per-agent).
+#   IT-3  Re-validate trust on every invocation (no cached trust).
+#   IT-4  Detect and alert on trust policy violations in real time.
+# ============================================================================
+
+evidence:
+  implicit_trust:
+    claimed_level: 0
+    artifacts: []
+    # -----------------------------------------------------------------------
+    # This template intentionally starts at Level 0 (no controls) to show
+    # a worst-case baseline. To use it for your own system:
+    #
+    # 1. Set claimed_level to the level you believe you've reached.
+    # 2. Add artifacts proving each control objective. Example:
+    #
+    #   artifacts:
+    #     - control_objective: IT-1
+    #       artifact: "configs/agent-auth-policy.yaml"
+    #       description: "mTLS with SPIFFE IDs between all agents."
+    #     - control_objective: IT-2
+    #       artifact: "policies/action-scopes.rego"
+    #       description: "OPA policy restricting which agents can call which actions."
+    # -----------------------------------------------------------------------

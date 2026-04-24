@@ -66,6 +66,131 @@ result = Assessment(system).run()
 print(result.summary())
 ```
 
+## Assess Your Own System
+
+The examples in this repo show pre-built scenarios. To evaluate **your own** agent architecture, you describe it in a YAML file and run the CLI against it. The whole process takes about 15 minutes.
+
+### Step 1: Start from a template
+
+Pick the assessment template closest to your architecture:
+
+```bash
+# Customer-facing agents with delegation and high-blast-radius actions
+cp acrf/assessments/implicit-trust.yaml my-system.yaml
+
+# Agents that pull from MCP registries or third-party tool servers
+cp acrf/assessments/supply-chain-toxicity.yaml my-system.yaml
+
+# Multi-turn conversational agents with per-turn guardrails
+cp acrf/assessments/multi-turn-defense-collapse.yaml my-system.yaml
+
+# Systems where operational agents can reach the safety/policy layer
+cp acrf/assessments/safety-controls-not-self-protecting.yaml my-system.yaml
+```
+
+Or start from scratch — any YAML conforming to `specs/system-description.schema.json` works.
+
+### Step 2: Describe your agents
+
+List every agent in the system with its role and identity scheme:
+
+```yaml
+agents:
+  - id: orchestrator
+    name: "Order Processing Orchestrator"
+    role: orchestrator
+    identity_scheme: mtls-spiffe
+    operates_on_behalf_of: user
+
+  - id: inventory
+    name: "Inventory Service Agent"
+    role: service_agent
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+  - id: payment
+    name: "Payment Processing Agent"
+    role: service_agent
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+```
+
+Roles: `orchestrator`, `tool_user`, `service_agent`, `third_party`.
+
+### Step 3: Map your channels
+
+Define how agents communicate. Pay attention to trust boundary crossings and blast radius — these drive the severity weighting:
+
+```yaml
+channels:
+  - id: ch-orch-payment
+    sender: orchestrator
+    receiver: payment
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: charge_customer
+        blast_radius: critical
+        reversible: false
+      - name: lookup_balance
+        blast_radius: low
+        reversible: true
+```
+
+### Step 4: Claim your maturity and attach evidence
+
+For each risk dimension you want to assess, state the level you believe you've reached (0–4) and point to the artifacts that prove it:
+
+```yaml
+evidence:
+  implicit_trust:
+    claimed_level: 2
+    artifacts:
+      - control_objective: IT-1
+        artifact: "configs/agent-mtls-policy.yaml"
+        description: "mTLS with SPIFFE IDs verified on every agent-to-agent call."
+      - control_objective: IT-2
+        artifact: "policies/action-scopes.rego"
+        description: "OPA policy restricting which agents can invoke which actions."
+```
+
+Leave out dimensions you're not ready to assess — the tool will score them as Level 0.
+
+### Step 5: Validate and run
+
+```bash
+# Check your YAML is structurally valid
+acrf validate my-system.yaml
+
+# Run the assessment — see a summary with gaps
+acrf assess my-system.yaml
+
+# Generate a full report for your security review
+acrf report my-system.yaml --format markdown -o my-system-report.md
+```
+
+### What you get back
+
+The assessment engine checks your claimed level against the evidence you provided. For each of the 10 risk dimensions, it awards the highest maturity level whose control objectives all have supporting artifacts — and tells you exactly what's missing.
+
+A full report includes per-dimension findings, OWASP cross-references, defense pattern recommendations, evidence gaps, and a prioritized remediation backlog weighted by AIVSS severity. See `examples/sample-assessment-report.md` for a complete example.
+
+**Or use it programmatically:**
+
+```python
+from acrf import Assessment, load_system
+
+system = load_system("my-system.yaml")
+result = Assessment(system).run()
+
+for dr in result.dimension_results:
+    if dr.awarded_level < dr.claimed_level:
+        print(f"{dr.dimension.display_name}: claimed {dr.claimed_level}, "
+              f"awarded {dr.awarded_level} — gaps: {dr.gaps}")
+```
+
 ## Why ACRF exists
 
 In production multi-agent deployments, three things keep going wrong:

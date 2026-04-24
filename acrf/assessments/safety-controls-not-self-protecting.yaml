@@ -1,0 +1,194 @@
+# ============================================================================
+# ACRF Assessment Template: Safety Controls Not Self-Protecting (ACRF-10)
+# ============================================================================
+# Severity: Critical (AIVSS 9.8) — Highest in the framework
+# OWASP Refs: Agentic Top 10 — A09 (Lack of Guardrails on Agent Actions)
+#             MCP Top 10 — M09 (Lack of Monitoring & Logging)
+# ============================================================================
+# This template models a system where the safety and compliance layer itself
+# can be bypassed, disabled, or manipulated by the agents it is meant to
+# govern. If an agent can modify its own guardrails, instruct another agent
+# to disable logging, or poison the policy engine's context, the entire
+# control plane becomes an attack surface.
+# ============================================================================
+
+acrf_version: "0.1"
+
+system:
+  name: "Autonomous DevOps Agent with Self-Modifiable Guardrails"
+  description: >-
+    A DevOps automation orchestrator manages infrastructure through tool
+    agents for deployment, database operations, and monitoring. A guardrail
+    agent enforces change-management policies (approval gates, blast-radius
+    limits, rollback requirements). However, the guardrail agent runs in the
+    same trust domain as the operational agents — meaning a compromised or
+    manipulated deployment agent could instruct the guardrail agent to
+    relax its policies, disable audit logging, or approve its own changes.
+  owner: "acrf/assessment-templates"
+  assessment_date: "2026-04-24"
+
+agents:
+  - id: devops-orch
+    name: "DevOps Orchestrator"
+    role: orchestrator
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: user
+
+  - id: deployer
+    name: "Deployment Agent"
+    role: tool_user
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+  - id: db-agent
+    name: "Database Operations Agent"
+    role: tool_user
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+  - id: guardrail
+    name: "Policy Guardrail Agent"
+    role: service_agent
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+  - id: monitor
+    name: "Monitoring & Audit Agent"
+    role: service_agent
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+trust_boundaries:
+  - id: tb-control-plane
+    name: "Control Plane Boundary"
+    description: "Boundary isolating guardrail and monitoring from operational agents."
+  - id: tb-production
+    name: "Production Environment Boundary"
+    description: "Boundary protecting production infrastructure actions."
+
+channels:
+  - id: ch-orch-deployer
+    sender: devops-orch
+    receiver: deployer
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: deploy_service
+        blast_radius: critical
+        reversible: false
+      - name: rollback_service
+        blast_radius: high
+        reversible: true
+
+  - id: ch-orch-db
+    sender: devops-orch
+    receiver: db-agent
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: run_migration
+        blast_radius: critical
+        reversible: false
+      - name: create_backup
+        blast_radius: low
+        reversible: true
+
+  - id: ch-orch-guardrail
+    sender: devops-orch
+    receiver: guardrail
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: request_approval
+        blast_radius: low
+        reversible: true
+      - name: check_policy
+        blast_radius: low
+        reversible: true
+
+  - id: ch-deployer-guardrail
+    sender: deployer
+    receiver: guardrail
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      # THIS IS THE RISK: operational agents can call the guardrail
+      - name: update_policy
+        blast_radius: critical
+        reversible: false
+      - name: request_exception
+        blast_radius: high
+        reversible: false
+
+  - id: ch-guardrail-monitor
+    sender: guardrail
+    receiver: monitor
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: false
+    synchronous: false
+    actions:
+      - name: emit_audit_event
+        blast_radius: low
+        reversible: true
+
+# ============================================================================
+# Evidence: Are the safety controls themselves protected?
+#
+# Maturity Levels:
+#   0 — None: Guardrail agent is callable and modifiable by the agents it
+#        governs. No integrity protection on policy definitions.
+#   1 — Initial: Guardrail config is read-only at runtime; policy changes
+#        require a separate deployment pipeline.
+#   2 — Defined: Guardrail agent runs in an isolated trust domain;
+#        operational agents cannot invoke policy-modification actions.
+#   3 — Managed: Tamper detection on guardrail state; automated alerts
+#        when policy drift is detected; audit log is append-only and
+#        externally attested.
+#   4 — Optimized: Formal separation of control and data planes;
+#        guardrail integrity verified by an independent out-of-band
+#        system; red-team exercises specifically target guardrail bypass.
+#
+# Control Objectives:
+#   SP-1  Prevent operational agents from modifying safety policies.
+#   SP-2  Isolate the guardrail agent's trust domain from the agents
+#         it governs.
+#   SP-3  Detect and alert on unauthorized changes to safety controls
+#         or audit logs.
+#   SP-4  Independently verify guardrail integrity via out-of-band
+#         attestation.
+# ============================================================================
+
+evidence:
+  safety_controls_not_self_protecting:
+    claimed_level: 0
+    artifacts: []
+    # -----------------------------------------------------------------------
+    # To adapt this template:
+    #
+    # 1. Identify which agents have write access to your safety controls.
+    # 2. Set claimed_level to your current maturity.
+    # 3. Add artifacts. Examples:
+    #
+    #   artifacts:
+    #     - control_objective: SP-1
+    #       artifact: "iac/guardrail-deploy-pipeline.yaml"
+    #       description: "GitOps pipeline — only merged PRs can update
+    #         guardrail policies; runtime agents have read-only access."
+    #     - control_objective: SP-2
+    #       artifact: "infra/network-policies.yaml"
+    #       description: "K8s NetworkPolicy isolating guardrail pods;
+    #         deployer cannot reach guardrail's policy-update endpoint."
+    #     - control_objective: SP-3
+    #       artifact: "monitoring/guardrail-integrity-alert.yaml"
+    #       description: "PagerDuty alert triggered when guardrail config
+    #         hash diverges from the last attested value."
+    # -----------------------------------------------------------------------

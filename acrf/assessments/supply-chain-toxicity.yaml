@@ -1,0 +1,163 @@
+# ============================================================================
+# ACRF Assessment Template: Supply Chain Toxicity (ACRF-05)
+# ============================================================================
+# Severity: Critical (AIVSS 9.2)
+# OWASP Refs: Agentic Top 10 — A05 (Insecure Agent-to-Agent Communication)
+#             MCP Top 10 — M03 (Tool Tampering / Server Spoofing)
+# ============================================================================
+# This template models an agent system that relies on external MCP servers,
+# third-party tool registries, and community plugins — the modern equivalent
+# of npm/PyPI supply chain risk, but for agent tooling.
+# ============================================================================
+
+acrf_version: "0.1"
+
+system:
+  name: "Research Analyst Agent with Plugin Ecosystem"
+  description: >-
+    A research orchestrator pulls data from multiple MCP tool servers, some
+    self-hosted and some from a public registry. A compromised or typosquatted
+    MCP server can inject malicious tool definitions, exfiltrate context, or
+    redirect agent actions without the orchestrator detecting the substitution.
+  owner: "acrf/assessment-templates"
+  assessment_date: "2026-04-24"
+
+agents:
+  - id: researcher
+    name: "Research Orchestrator"
+    role: orchestrator
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: user
+
+  - id: web-search
+    name: "Web Search Agent"
+    role: tool_user
+    identity_scheme: api-key
+    operates_on_behalf_of: service
+
+  - id: data-analyst
+    name: "Data Analysis Agent"
+    role: service_agent
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+  - id: mcp-registry-tool
+    name: "Public MCP Registry Tool"
+    role: third_party
+    identity_scheme: none
+    operates_on_behalf_of: unattended
+
+  - id: community-plugin
+    name: "Community Summarizer Plugin"
+    role: third_party
+    identity_scheme: none
+    operates_on_behalf_of: unattended
+
+trust_boundaries:
+  - id: tb-internal
+    name: "Internal Agent Boundary"
+    description: "Boundary around self-hosted, controlled agents."
+  - id: tb-registry
+    name: "Public Registry Boundary"
+    description: "Boundary between internal agents and public MCP registries."
+  - id: tb-community
+    name: "Community Plugin Boundary"
+    description: "Boundary for unvetted community-contributed plugins."
+
+channels:
+  - id: ch-researcher-search
+    sender: researcher
+    receiver: web-search
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: web_search
+        blast_radius: low
+        reversible: true
+
+  - id: ch-researcher-analyst
+    sender: researcher
+    receiver: data-analyst
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: analyze_dataset
+        blast_radius: medium
+        reversible: true
+      - name: write_report
+        blast_radius: medium
+        reversible: true
+
+  - id: ch-researcher-registry
+    sender: researcher
+    receiver: mcp-registry-tool
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: discover_tools
+        blast_radius: high
+        reversible: false
+      - name: install_tool
+        blast_radius: critical
+        reversible: false
+
+  - id: ch-researcher-plugin
+    sender: researcher
+    receiver: community-plugin
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: summarize_content
+        blast_radius: medium
+        reversible: true
+
+# ============================================================================
+# Evidence: What supply chain controls exist today?
+#
+# Maturity Levels:
+#   0 — None: Tools installed from any source with no verification.
+#   1 — Initial: Pinned tool versions; basic allowlist of approved sources.
+#   2 — Defined: Signature verification on tool packages; SBOM generated
+#        for all MCP server dependencies.
+#   3 — Managed: Automated scanning of tool definitions for injection
+#        patterns; runtime tool behavior monitoring.
+#   4 — Optimized: Reproducible tool builds; supply chain attestation
+#        (SLSA Level 3+); continuous drift detection on tool definitions.
+#
+# Control Objectives:
+#   SC-1  Maintain an inventory of all MCP servers and third-party tools.
+#   SC-2  Verify integrity and provenance of tool packages before use.
+#   SC-3  Monitor runtime tool behavior for deviation from declared specs.
+#   SC-4  Enforce supply chain attestation and reproducible builds.
+# ============================================================================
+
+evidence:
+  supply_chain_toxicity:
+    claimed_level: 0
+    artifacts: []
+    # -----------------------------------------------------------------------
+    # To adapt this template:
+    #
+    # 1. Replace agents/channels with your actual MCP server topology.
+    # 2. Set claimed_level to your current maturity.
+    # 3. Add artifacts. Examples:
+    #
+    #   artifacts:
+    #     - control_objective: SC-1
+    #       artifact: "inventory/mcp-servers.yaml"
+    #       description: "Complete inventory of 12 MCP servers with version pins."
+    #     - control_objective: SC-2
+    #       artifact: "ci/verify-signatures.sh"
+    #       description: "CI step that verifies cosign signatures on all tool packages."
+    #     - control_objective: SC-3
+    #       artifact: "monitoring/tool-behavior-dashboard.url"
+    #       description: "Datadog dashboard tracking tool call patterns vs declared specs."
+    # -----------------------------------------------------------------------

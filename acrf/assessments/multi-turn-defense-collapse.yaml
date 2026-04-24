@@ -1,0 +1,153 @@
+# ============================================================================
+# ACRF Assessment Template: Multi-Turn Defense Collapse (ACRF-07)
+# ============================================================================
+# Severity: Critical (AIVSS 9.6)
+# OWASP Refs: Agentic Top 10 — A02 (Agent Prompt Injection / Manipulation)
+#             MCP Top 10 — M06 (Indirect Prompt Injection via Tool Results)
+# ============================================================================
+# This template models a conversational agent system where safety guardrails
+# are applied per-turn but erode across a multi-turn interaction. An attacker
+# (or a manipulated upstream agent) can gradually shift context across turns
+# until the target agent performs actions it would have refused in turn 1.
+# ============================================================================
+
+acrf_version: "0.1"
+
+system:
+  name: "Financial Advisory Multi-Turn Agent"
+  description: >-
+    A financial advisory chatbot uses a planning agent to build investment
+    strategies and an execution agent to place trades. Safety guardrails
+    (risk limits, compliance checks) are evaluated per-turn. Over a multi-turn
+    session, an attacker can incrementally expand the scope of permitted
+    actions — first asking about small trades, then gradually escalating to
+    unauthorized portfolio changes — because the guardrail context resets
+    each turn while the agent's working memory retains the shifted context.
+  owner: "acrf/assessment-templates"
+  assessment_date: "2026-04-24"
+
+agents:
+  - id: advisor
+    name: "Financial Advisor Chatbot"
+    role: orchestrator
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: user
+
+  - id: planner
+    name: "Portfolio Planning Agent"
+    role: service_agent
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+  - id: executor
+    name: "Trade Execution Agent"
+    role: service_agent
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+  - id: compliance
+    name: "Compliance Checker"
+    role: service_agent
+    identity_scheme: oauth-client-credentials
+    operates_on_behalf_of: service
+
+trust_boundaries:
+  - id: tb-user
+    name: "User Interaction Boundary"
+    description: "Boundary between the user-facing chatbot and internal agents."
+  - id: tb-execution
+    name: "Trade Execution Boundary"
+    description: "Boundary protecting irreversible financial operations."
+
+channels:
+  - id: ch-advisor-planner
+    sender: advisor
+    receiver: planner
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: create_strategy
+        blast_radius: low
+        reversible: true
+      - name: modify_allocation
+        blast_radius: medium
+        reversible: true
+
+  - id: ch-advisor-executor
+    sender: advisor
+    receiver: executor
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: true
+    synchronous: true
+    actions:
+      - name: execute_trade
+        blast_radius: critical
+        reversible: false
+      - name: cancel_pending_order
+        blast_radius: medium
+        reversible: true
+
+  - id: ch-advisor-compliance
+    sender: advisor
+    receiver: compliance
+    transport: https
+    message_format: json-rpc
+    crosses_trust_boundary: false
+    synchronous: true
+    actions:
+      - name: check_trade_limits
+        blast_radius: low
+        reversible: true
+      - name: flag_violation
+        blast_radius: low
+        reversible: true
+
+# ============================================================================
+# Evidence: What multi-turn defense controls exist today?
+#
+# Maturity Levels:
+#   0 — None: Safety checks are stateless; no cross-turn context tracking.
+#   1 — Initial: Session-level audit log; basic turn counter limits.
+#   2 — Defined: Cumulative action tracking across turns; escalation
+#        thresholds that account for session history.
+#   3 — Managed: Semantic drift detection comparing current-turn intent
+#        against session baseline; automated session termination on drift.
+#   4 — Optimized: Adversarial red-team testing of multi-turn flows;
+#        formal verification of guardrail persistence across turn boundaries.
+#
+# Control Objectives:
+#   MT-1  Track cumulative actions and context across the full session.
+#   MT-2  Apply escalation thresholds based on session history, not just
+#         the current turn.
+#   MT-3  Detect semantic drift or incremental scope expansion across turns.
+#   MT-4  Red-team multi-turn attack paths and verify guardrail persistence.
+# ============================================================================
+
+evidence:
+  multi_turn_defense_collapse:
+    claimed_level: 0
+    artifacts: []
+    # -----------------------------------------------------------------------
+    # To adapt this template:
+    #
+    # 1. Map your agent's conversational flow and safety checkpoints.
+    # 2. Set claimed_level to your current maturity.
+    # 3. Add artifacts. Examples:
+    #
+    #   artifacts:
+    #     - control_objective: MT-1
+    #       artifact: "middleware/session-action-tracker.py"
+    #       description: "Middleware that accumulates all actions in a session
+    #         and passes the running total to each guardrail check."
+    #     - control_objective: MT-2
+    #       artifact: "policies/escalation-thresholds.yaml"
+    #       description: "Policy file defining cumulative trade-value limits
+    #         that trigger human-in-the-loop approval."
+    #     - control_objective: MT-3
+    #       artifact: "monitoring/drift-detector.py"
+    #       description: "Embedding-based drift detector that compares each
+    #         turn's intent to the session-opening intent vector."
+    # -----------------------------------------------------------------------
