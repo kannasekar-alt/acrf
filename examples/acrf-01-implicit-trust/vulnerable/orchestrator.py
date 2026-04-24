@@ -1,5 +1,6 @@
 """TravelOrchestrator Agent — VULNERABLE VERSION (ACRF-01 demo)"""
 import time
+
 import requests
 
 BOOKING_SERVICE_URL = "http://booking-executor:8000/book"

@@ -4,10 +4,9 @@ import json
 import time
 from pathlib import Path
 
-from flask import Flask, request, jsonify
-from cryptography.hazmat.primitives import serialization
 from cryptography.exceptions import InvalidSignature
-
+from cryptography.hazmat.primitives import serialization
+from flask import Flask, jsonify, request
 from keygen import ensure_keys_exist
 
 app = Flask(__name__)

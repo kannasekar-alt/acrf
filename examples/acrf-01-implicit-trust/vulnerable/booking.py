@@ -1,6 +1,7 @@
 """BookingExecutor Agent — VULNERABLE VERSION (ACRF-01 demo)"""
-from flask import Flask, request, jsonify
 import time
+
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 

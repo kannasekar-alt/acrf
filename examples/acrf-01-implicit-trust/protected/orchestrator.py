@@ -7,7 +7,6 @@ from pathlib import Path
 
 import requests
 from cryptography.hazmat.primitives import serialization
-
 from keygen import ensure_keys_exist
 
 BOOKING_SERVICE_URL = "http://booking-executor:8000/book"
