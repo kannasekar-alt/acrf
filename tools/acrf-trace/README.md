@@ -3,18 +3,18 @@
 A causal trace tool for AI agent communication.
 Implements the ACRF-08 (Cascading Failure Blindness) defense pattern.
 
-Part of the ACRF framework: https://github.com/kannasekar-alt/acrf
+Part of the ACRF framework: https://github.com/kannasekar-alt/ACRF
 Presented at RSA Conference 2026.
 
 ---
 
 ## The problem this solves
 
-Imagine 10 AI agents working together in a chain:
+Imagine PriceAgent calls TradeAgent, which calls ExecutionAgent:
 
-    Agent1 -> Agent2 -> Agent3 -> ... -> Agent10
+    PriceAgent -> TradeAgent -> ExecutionAgent
 
-Agent10 produces bad output. Your team asks: who caused this?
+ExecutionAgent makes a bad trade. Your team asks: who caused this?
 
 Without tracing -- nobody knows. The chain is invisible.
 This is ACRF-08: Cascading Failure Blindness.
@@ -23,9 +23,9 @@ acrf-trace gives every agent call a unique ID, links each call
 to whoever triggered it, and lets you reconstruct the full chain
 from any single action -- all the way back to the root cause.
 
-If Agent7 was hacked and fed poisoned input, you find it instantly:
+If TradeAgent received poisoned input, you find it instantly:
 
-    Agent10 <- Agent9 <- Agent8 <- Agent7 (POISONED HERE) <- Agent6
+    ExecutionAgent <- TradeAgent (POISONED HERE) <- PriceAgent
 
 ---
 
@@ -35,8 +35,8 @@ If Agent7 was hacked and fed poisoned input, you find it instantly:
 
 Or from source:
 
-    git clone https://github.com/kannasekar-alt/acrf.git
-    cd acrf/tools/acrf-trace
+    git clone https://github.com/kannasekar-alt/ACRF.git
+    cd tools/acrf-trace
     pip install -e .
 
 ---
