@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "acrf-trace"
+version = "0.1.0"
+description = "A causal trace tool for AI agent communication — implements ACRF-08 (Cascading Failure Blindness) defense"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Ravi Karthick Sankara Narayanan", email = "xmacse@gmail.com"},
+    {name = "Kanna Sekar", email = "kannasekar2@gmail.com"},
+]
+keywords = ["acrf", "ai-agents", "security", "observability", "tracing", "agent-communication"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/kannasekar-alt/acrf"
+Repository = "https://github.com/kannasekar-alt/acrf"
+Issues = "https://github.com/kannasekar-alt/acrf/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["acrf_trace*"]
+
+[project.scripts]
+acrf-trace = "acrf_trace.cli:main"
