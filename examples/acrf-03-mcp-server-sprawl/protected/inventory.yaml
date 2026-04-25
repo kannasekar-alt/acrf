@@ -1,0 +1,16 @@
+# Approved MCP Server Inventory
+# ACRF-03 Defense: SS-1 Maintained inventory
+# Only servers listed here are permitted to receive agent connections.
+
+approved_servers:
+  - name: email-server
+    host: email-server
+    port: 8001
+    owner: platform-team
+    approved_date: 2026-01-15
+    tools:
+      - send
+      - status
+
+# postmark-mcp is NOT listed here.
+# Any connection attempt to unlisted servers will be blocked and logged.

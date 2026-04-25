@@ -1,0 +1,59 @@
+services:
+
+  vulnerable-email:
+    build: ./vulnerable
+    container_name: email-server
+    command: python -u email-server.py
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  vulnerable-shadow:
+    build: ./vulnerable
+    container_name: shadow-server
+    command: python -u shadow-server.py
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  vulnerable-agent:
+    build: ./vulnerable
+    container_name: dev-agent
+    command: python -u agent.py
+    depends_on:
+      - vulnerable-email
+      - vulnerable-shadow
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  protected-email:
+    build: ./protected
+    container_name: email-server
+    command: python -u email-server.py
+    profiles: ["protected"]
+    networks:
+      - acrf-demo
+
+  protected-shadow:
+    build: ./protected
+    container_name: shadow-server
+    command: python -u shadow-server.py
+    profiles: ["protected"]
+    networks:
+      - acrf-demo
+
+  protected-agent:
+    build: ./protected
+    container_name: dev-agent
+    command: python -u agent.py
+    depends_on:
+      - protected-email
+      - protected-shadow
+    profiles: ["protected"]
+    networks:
+      - acrf-demo
+
+networks:
+  acrf-demo:
+    driver: bridge
