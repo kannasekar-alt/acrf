@@ -157,3 +157,59 @@ Presented at RSA Conference 2026.
 Authors: Ravi Karthick Sankara Narayanan and Kanna Sekar
 
 Licensed under Apache 2.0.
+
+## Built with
+
+- Python 3.11
+- Flask 3.0 - MCP server simulation (email server and shadow server)
+- requests 2.31 - agent-to-server communication
+- PyYAML 6.0 - approved server inventory parsing
+- Docker + Docker Compose - isolated vulnerable and protected environments
+
+## Security patterns implemented
+
+- Server inventory allowlist - approved servers explicitly listed (SS-1)
+- Pre-connection validation - check inventory before connecting (SS-2)
+- Shadow server detection - unauthorized servers flagged and blocked
+- Audit logging - every blocked connection attempt recorded
+- postmark-mcp simulation - real attack scenario from September 2025
+
+## How RBAC and ABAC apply here
+
+**RBAC (Role-Based Access Control):**
+MCP servers are classified by role:
+- approved: permitted to receive agent connections
+- shadow: not in inventory, connection blocked regardless of behavior
+- malicious: known bad actor, flagged immediately
+
+An agent with no approved role cannot connect even if
+it presents valid-looking endpoints.
+
+**ABAC (Attribute-Based Access Control):**
+Connection decisions use multiple server attributes:
+- Is the server in the approved inventory? (identity attribute)
+- Does it require authentication? (security attribute)
+- Is it internet-exposed? (network attribute)
+- What tools does it expose? (capability attribute)
+- Who is the declared owner? (accountability attribute)
+
+A server passes only if ALL attributes meet policy.
+internet_exposed AND auth=none triggers automatic block
+regardless of whether the server name appears familiar.
+
+## What the cybersecurity community can take from this
+
+MCP server sprawl is the shadow IT problem of the AI era.
+The same governance principles that control SaaS sprawl apply:
+
+- Inventory everything - you cannot secure what you cannot see
+- Approve before deploy - shift security left into the request process
+- Scan continuously - drift happens, automated detection catches it
+- Generate AIBOMs - AI Bill of Materials is the software BOM for agents
+
+492 MCP servers are currently internet-exposed with zero authentication.
+Every one of them is a Level 0 ACRF-03 finding.
+
+If your organization manages a SaaS inventory today,
+you need an MCP server inventory tomorrow.
+The tools exist. The process is the same. The stakes are higher.

@@ -86,3 +86,51 @@ Part of the ACRF (Agent Communication Risk Framework) project.
 Presented at RSA Conference 2026 by Kanna Sekar (Google) and Ravi Karthick Sankara Narayanan (Deloitte).
 
 Licensed under Apache 2.0.
+
+## Built with
+
+- Python 3.11
+- Flask 3.0 - lightweight HTTP server for agent simulation
+- cryptography 42.0 - Ed25519 key generation and signature verification
+- requests 2.31 - inter-agent HTTP communication
+- Docker + Docker Compose - containerized attack and defense isolation
+
+## Security patterns implemented
+
+- Cryptographic identity verification - replaces implicit trust with proof
+- Ed25519 asymmetric signatures - lightweight, fast, modern curve
+- Agent Cards - public key distribution and capability declaration
+- Warrant delegation - scoped authority per request, not per session
+- Audit logging - every rejected attempt recorded with timestamp and reason
+
+## How RBAC and ABAC apply here
+
+**RBAC (Role-Based Access Control):**
+Every agent has a declared role - orchestrator or executor.
+Only agents with the orchestrator role are permitted to initiate
+booking requests. The BookingExecutor checks the sender role
+before processing any action.
+
+**ABAC (Attribute-Based Access Control):**
+Access decisions consider multiple attributes beyond role:
+- Was the message signed? (requester attribute)
+- Is the signature cryptographically valid? (request integrity attribute)
+- Does the sender appear in the trust store? (identity attribute)
+- Is the action reversible? (resource attribute)
+
+All attributes must pass. A signed message from an unknown sender
+is rejected. A known sender with a forged signature is rejected.
+This is ACRF-01 defense implemented as attribute-based policy.
+
+## What the cybersecurity community can take from this
+
+Traditional IAM (SailPoint, Okta, CyberArk) secures human identity.
+This demo shows the same Zero Trust principles applied to AI agents:
+
+- Agents need cryptographic identities, not just API keys
+- Trust must be verified on every request, not assumed from network position
+- Every action needs an audit trail back to the originating identity
+- Delegation must be explicit and scoped, not inherited
+
+If you enforce Zero Trust for human access today,
+your AI agents need the same treatment.

@@ -159,3 +159,55 @@ Presented at RSA Conference 2026.
 Authors: Ravi Karthick Sankara Narayanan and Kanna Sekar
 
 Licensed under Apache 2.0.
+
+## Built with
+
+- acrf-trace 0.1.0 (pip install acrf-trace)
+- Python 3.11
+- SQLite - persistent trace storage built into Python, no server needed
+- PyYAML 6.0 - system description example files
+- Docker + Docker Compose - planned for v0.2 cascading failure demo
+
+## Security patterns implemented
+
+- Distributed tracing - every agent call gets a unique trace ID
+- Causal chain linking - parent trace ID connects every hop
+- Persistent audit store - SQLite database survives process restarts
+- Backward trace reconstruction - get_chain() walks from any point to root
+- ACRF-08 maturity scoring - CF-1 through CF-4 control objectives assessed
+
+## How RBAC and ABAC apply here
+
+**RBAC (Role-Based Access Control):**
+Trace data reveals which agents called which actions.
+With role awareness, you can detect violations in the causal chain:
+a monitor-role agent calling an execute-role action appears
+immediately in the trace. The chain shows not just WHAT happened
+but WHO had authority to do it at each hop.
+
+**ABAC (Attribute-Based Access Control):**
+Chain depth and agent attributes should drive circuit breaker policy:
+- chain_depth > 5: flag for human review
+- chain_depth > 10: automatic circuit breaker fires
+- unknown_agent in chain: halt and alert immediately
+- parent_trace_id missing: reject - unlinked call cannot be trusted
+
+acrf-trace captures every attribute needed to enforce these policies.
+Version 0.2 will add integrity hashing (CF-3) and attribute-based
+circuit breakers that use chain metadata to halt cascades automatically.
+
+## What the cybersecurity community can take from this
+
+When something goes wrong in a multi-agent system,
+Mean Time To Root Cause (MTTR) is the metric that matters.
+
+Without tracing: MTTR = hours or days (manual log correlation across systems)
+With acrf-trace: MTTR = seconds (one get_chain() call reconstructs everything)
+
+Traditional SIEMs (Splunk, Sentinel, Chronicle) see agent logs
+but cannot reconstruct causal intent across agent boundaries.
+acrf-trace fills that gap - purpose-built for AI agent communication chains.
+
+If your SIEM gives you logs today, acrf-trace gives you causality.
+The difference is the difference between finding the fire
+and understanding who started it and why.
