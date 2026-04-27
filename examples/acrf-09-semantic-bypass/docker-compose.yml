@@ -1,0 +1,41 @@
+services:
+
+  vulnerable-firewall:
+    build: ./vulnerable
+    container_name: firewall
+    command: python -u firewall.py
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  vulnerable-attacker:
+    build: ./vulnerable
+    container_name: attacker
+    command: python -u attacker.py
+    depends_on:
+      - vulnerable-firewall
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  protected-firewall:
+    build: ./protected
+    container_name: firewall
+    command: python -u firewall.py
+    profiles: ["protected"]
+    networks:
+      - acrf-demo
+
+  protected-attacker:
+    build: ./protected
+    container_name: attacker
+    command: python -u attacker.py
+    depends_on:
+      - protected-firewall
+    profiles: ["protected"]
+    networks:
+      - acrf-demo
+
+networks:
+  acrf-demo:
+    driver: bridge
