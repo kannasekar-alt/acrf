@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "TicketApp": {
+      "command": "python",
+      "args": [
+        "./ticket-server.py"
+      ],
+      "tools": [
+        "book_ticket",
+        "cancel_ticket",
+        "refund_ticket",
+        "apply_discount",
+        "send_confirmation"
+      ],
+      "autoApprove": []
+    }
+  }
+}

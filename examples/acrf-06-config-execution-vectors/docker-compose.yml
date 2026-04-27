@@ -1,0 +1,71 @@
+services:
+
+  vulnerable-ticket-server:
+    build: ./vulnerable
+    container_name: ticket-server
+    command: python -u ticket_server.py
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  vulnerable-attacker:
+    build: ./vulnerable
+    container_name: attacker
+    command: python -u attacker.py
+    profiles: ["vulnerable"]
+    volumes:
+      - vulnerable-config:/app
+    networks:
+      - acrf-demo
+
+  vulnerable-agent:
+    build: ./vulnerable
+    container_name: ticket-agent
+    command: python -u agent.py
+    depends_on:
+      - vulnerable-ticket-server
+      - vulnerable-attacker
+    profiles: ["vulnerable"]
+    volumes:
+      - vulnerable-config:/app
+    networks:
+      - acrf-demo
+
+  protected-ticket-server:
+    build: ./protected
+    container_name: ticket-server
+    command: python -u ticket_server.py
+    profiles: ["protected"]
+    networks:
+      - acrf-demo
+
+  protected-attacker:
+    build: ./protected
+    container_name: attacker
+    command: python -u attacker.py
+    profiles: ["protected"]
+    volumes:
+      - protected-config:/app
+    networks:
+      - acrf-demo
+
+  protected-agent:
+    build: ./protected
+    container_name: ticket-agent
+    command: python -u agent.py
+    depends_on:
+      - protected-ticket-server
+      - protected-attacker
+    profiles: ["protected"]
+    volumes:
+      - protected-config:/app
+    networks:
+      - acrf-demo
+
+networks:
+  acrf-demo:
+    driver: bridge
+
+volumes:
+  vulnerable-config:
+  protected-config:

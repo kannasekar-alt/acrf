@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "TicketApp": {
+      "command": "python",
+      "args": [
+        "./ticket-server.py"
+      ],
+      "tools": [
+        "book_ticket",
+        "cancel_ticket",
+        "refund_ticket",
+        "apply_discount",
+        "send_confirmation"
+      ],
+      "autoApprove": []
+    }
+  },
+  "_integrity": "sha256:e8424ddbe3aa3de5511c2d06fea067611aadc5e53546b57553fd118181e21c52"
+}
