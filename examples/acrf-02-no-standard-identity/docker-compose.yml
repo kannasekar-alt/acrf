@@ -1,0 +1,41 @@
+services:
+
+  vulnerable-gateway:
+    build: ./vulnerable
+    container_name: api-gateway
+    command: python -u api_gateway.py
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  vulnerable-attacker:
+    build: ./vulnerable
+    container_name: attacker
+    command: python -u attacker.py
+    depends_on:
+      - vulnerable-gateway
+    profiles: ["vulnerable"]
+    networks:
+      - acrf-demo
+
+  protected-gateway:
+    build: ./protected
+    container_name: api-gateway
+    command: python -u api_gateway.py
+    profiles: ["protected"]
+    networks:
+      - acrf-demo
+
+  protected-attacker:
+    build: ./protected
+    container_name: attacker
+    command: python -u attacker.py
+    depends_on:
+      - protected-gateway
+    profiles: ["protected"]
+    networks:
+      - acrf-demo
+
+networks:
+  acrf-demo:
+    driver: bridge
