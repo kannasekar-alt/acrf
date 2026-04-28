@@ -80,6 +80,74 @@ Without the private key, forged messages cannot produce valid signatures.
         ├── attacker.py
         └── Dockerfile
 
+
+## How to use this in your real environment
+
+Step 1 - Generate Agent Cards for every agent in your system
+
+Every agent needs a cryptographic identity. Generate an Ed25519 keypair
+at startup and publish the public key as an Agent Card:
+
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    private_key = Ed25519PrivateKey.generate()
+    public_key = private_key.public_key()
+
+Step 2 - Sign every outgoing message
+
+Before sending any message to another agent, sign it:
+
+    import json
+    from cryptography.hazmat.primitives.serialization import Encoding, Raw
+
+    def sign_message(payload: dict, private_key) -> str:
+        canonical = json.dumps(payload, sort_keys=True).encode()
+        signature = private_key.sign(canonical)
+        return signature.hex()
+
+Step 3 - Verify every incoming message
+
+Before processing any message from another agent, verify it:
+
+    def verify_message(payload: dict, signature_hex: str, public_key) -> bool:
+        try:
+            canonical = json.dumps(payload, sort_keys=True).encode()
+            public_key.verify(bytes.fromhex(signature_hex), canonical)
+            return True
+        except Exception:
+            return False
+
+Step 4 - Maintain a trust store
+
+Keep a registry of approved Agent Cards. Reject any message from
+an agent whose public key is not in your trust store.
+
+Step 5 - Audit every rejection
+
+Every signature verification failure is a potential attack.
+Log it with the sender identity, timestamp, and payload hash.
+
+---
+
+## ACRF-01 maturity levels
+
+    Level 0 - NONE      No authentication between agents. Implicit trust.
+    Level 1 - INITIAL   API keys used but shared across agents (ACRF-02 problem).
+    Level 2 - DEFINED   Per-agent cryptographic identity via Agent Cards (IT-1, IT-2).
+    Level 3 - MANAGED   mTLS enforced on all inter-agent channels (IT-1, IT-2, IT-3).
+    Level 4 - OPTIMIZED Warrant delegation with scoped authority per request (IT-1 through IT-4).
+
+This demo implements Level 2 - Ed25519 signed Agent Cards.
+
+---
+
+## Control objectives addressed
+
+    IT-1  Every agent message is cryptographically authenticated before processing
+    IT-2  Agent identity verified against a trusted Agent Card registry
+    IT-3  Rejection of unverified messages logged with full audit context
+
+---
+
 ## Attribution
 
 Part of the ACRF (Agent Communication Risk Framework) project.

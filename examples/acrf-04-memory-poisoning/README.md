@@ -173,6 +173,62 @@ needs the same protection as your identity infrastructure.
 
 ---
 
+
+## How to use this in your real environment
+
+Step 1 - Sign every memory entry at creation time
+
+When your agent writes to its memory store, sign the entry:
+
+    import hashlib
+    import hmac
+    import json
+
+    SECRET_KEY = b"your-secret-key-store-in-vault-not-code"
+
+    def sign_entry(entry: dict) -> str:
+        canonical = json.dumps(entry, sort_keys=True, separators=(",", ":"))
+        return hmac.new(SECRET_KEY, canonical.encode(), hashlib.sha256).hexdigest()
+
+Step 2 - Store the signature with the entry
+
+    entry = {"user_id": "john.smith", "role": "Junior Developer", "access": "read-only"}
+    entry["_signature"] = sign_entry(entry)
+    memory_store.write(entry)
+
+Step 3 - Verify before acting on any memory entry
+
+Before your agent makes any decision based on memory, validate:
+
+    def verify_entry(entry: dict) -> bool:
+        stored_sig = entry.pop("_signature", None)
+        if not stored_sig:
+            return False
+        expected = sign_entry(entry)
+        return hmac.compare_digest(expected, stored_sig)
+
+    entry = memory_store.read("john.smith")
+    if not verify_entry(entry):
+        raise SecurityError("Memory entry tampered - refusing to act")
+
+Step 4 - Deny by default on validation failure
+
+Never fall back to acting on a tampered entry.
+Deny the request, alert the security team, and log the event.
+
+Step 5 - Apply this to every data store your agent reads from
+
+Not just user profiles. Any data that influences agent decisions:
+- CRM records
+- Policy documents
+- Access control lists
+- Conversation history
+- Retrieved RAG chunks
+
+If an agent acts on it - sign it and verify it.
+
+---
+
 ## ACRF-04 maturity levels
 
     Level 0 - NONE      No isolation of agent memory. Agents share context freely.
