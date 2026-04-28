@@ -229,6 +229,46 @@ If it is a Python function, you can wrap it.
 
 ---
 
+## Real-world use -- on a client engagement
+
+You are assessing a client's AI agent system.
+They have multiple agents talking to each other.
+You want to know their ACRF-08 maturity level.
+
+Step 1 -- Install on the client's system:
+
+    pip install acrf-trace
+
+Step 2 -- Ask the client to add @wrap to each agent function.
+Two lines per function. No other changes:
+
+    from acrf_trace import wrap
+
+    @wrap(agent_name="CustomerServiceAgent")
+    def customer_service_agent(query):
+        return billing_agent(query)
+
+    @wrap(agent_name="BillingAgent")
+    def billing_agent(query):
+        return "your bill is $500"
+
+Step 3 -- Let agents run normally for a day or a week.
+
+Step 4 -- Generate the maturity report:
+
+    acrf-trace report
+
+You get:
+- Which agents are talking to which
+- Whether causal chains are fully traceable
+- ACRF-08 maturity level (0-4)
+- Specific gaps to remediate
+
+That is a billable deliverable from one command.
+The gap report tells the client exactly what to fix and why.
+
+---
+
 ## Authors
 
 Ravi Karthick Sankara Narayanan
