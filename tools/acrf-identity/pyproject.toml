@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "acrf-identity"
+version = "0.1.0"
+description = "Production-grade agent identity for AI systems. Ed25519 signed Agent Cards. Implements ACRF-01 defense pattern."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+    { name = "Ravi Karthick Sankara Narayanan" },
+    { name = "Kanna Sekar" }
+]
+keywords = ["ai-security", "agent-security", "agent-identity", "ed25519", "acrf", "agent-card", "a2a"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+dependencies = [
+    "cryptography>=41.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/kannasekar-alt/ACRF"
+Repository = "https://github.com/kannasekar-alt/ACRF"
+Issues = "https://github.com/kannasekar-alt/ACRF/issues"
+
+[project.scripts]
+acrf-identity = "acrf_identity.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["acrf_identity*"]
