@@ -167,8 +167,7 @@ If you read JSON config files, you can use this library.
 
 ## Authors
 
-Ravi Karthick Sankara Narayanan
-Kanna Sekar
+Ravi Karthick Sankara Narayanan, Kanna Sekar
 
 ## License
 

@@ -159,8 +159,7 @@ If your agent reads structured data that influences decisions, sign it.
 
 ## Authors
 
-Ravi Karthick Sankara Narayanan
-Kanna Sekar
+Ravi Karthick Sankara Narayanan, Kanna Sekar
 
 ## License
 

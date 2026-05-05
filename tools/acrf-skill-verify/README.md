@@ -176,8 +176,7 @@ If you install third-party skills or plugins, you can use this library.
 
 ## Authors
 
-Ravi Karthick Sankara Narayanan
-Kanna Sekar
+Ravi Karthick Sankara Narayanan, Kanna Sekar
 
 ## License
 

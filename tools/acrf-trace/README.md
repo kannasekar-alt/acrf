@@ -302,8 +302,7 @@ The gap report tells the client exactly what to fix and why.
 
 ## Authors
 
-Ravi Karthick Sankara Narayanan
-Kanna Sekar
+Ravi Karthick Sankara Narayanan, Kanna Sekar
 
 ## License
 
