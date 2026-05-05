@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "acrf-turn-guardian"
+version = "0.1.0"
+description = "Multi-turn conversation drift detection for AI agents. Implements ACRF-07 defense pattern."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+    { name = "Ravi Karthick Sankara Narayanan" },
+    { name = "Kanna Sekar" }
+]
+keywords = ["ai-security", "agent-security", "multi-turn", "intent-drift", "conversation", "acrf"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/kannasekar-alt/ACRF"
+Repository = "https://github.com/kannasekar-alt/ACRF"
+Issues = "https://github.com/kannasekar-alt/ACRF/issues"
+
+[project.scripts]
+acrf-turn-guardian = "acrf_turn_guardian.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["acrf_turn_guardian*"]
